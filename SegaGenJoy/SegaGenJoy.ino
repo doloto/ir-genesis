@@ -18,13 +18,13 @@ void setup()
 {
   Serial.begin(9600);
   irrecv.enableIRIn(); // Start the receiver
-  pinMode(13, OUTPUT);
 }
 
+// Format of message
 #define SG_HEADER_LEN 38
 #define SG_PAIRS_NUM 17
 
-//in USECs
+//A;; in USECs
 #define SG_HEADER_1 2250
 #define SG_HEADER_2 700
 #define SG_HIGH_1 300
@@ -32,8 +32,10 @@ void setup()
 #define SG_LOW_2  700
 
 #define SG_TOLERANCE 100
+
 #define SG_MATCH(x, y) (abs(y - x) <= SG_TOLERANCE)
 
+// Scancodes
 #define SG_A 32639
 #define SG_B 4294950847
 #define SG_C 4294959071
@@ -50,6 +52,16 @@ void setup()
 #define SG_MN 28671
 #define SG_ST 32751
 
+#define SG_END 4294967295
+
+#ifdef DEBUG_PRINT
+#define DEB_PR(x)  (Serial.print(x))
+#define DEB_PRL(x) (Serial.println(x))
+#else
+#define DEB_PR(x)
+#define DEB_PRL(x)
+#endif
+
 unsigned long int decode_sega_gen(decode_results *results) {
   long raw_usec[SG_HEADER_LEN];
   unsigned long int scan_code = 0;
@@ -59,52 +71,49 @@ unsigned long int decode_sega_gen(decode_results *results) {
 
   // Check len
   if (results->rawlen != SG_HEADER_LEN) {
-      Serial.println("Size");
+      DEB_PRL("Size");
       return 0;  
   }
   
   // Check header   
   if (!SG_MATCH(raw_usec[0], SG_HEADER_1)) {      
-      Serial.print("H1 ");
-      Serial.println(abs(SG_HEADER_1 - raw_usec[0]));
+      DEB_PR("H1 ");
+      DEB_PRL(abs(SG_HEADER_1 - raw_usec[0]));
       return 0;
   }
   if (!SG_MATCH(raw_usec[1], SG_HEADER_2)) {      
-      Serial.print("H2 ");
-      Serial.println(abs(SG_HEADER_2 - raw_usec[1]));
+      DEB_PR("H2 ");
+      DEB_PRL(abs(SG_HEADER_2 - raw_usec[1]));
       return 0;
   }
-  Serial.print("scancode ");
+  DEB_PR("scancode ");
   for (int i = 2;  i < SG_PAIRS_NUM*2;  i=i+2) {
       long p1 = raw_usec[i];
       long p2 = raw_usec[i+1];
       
       if (SG_MATCH(p1, SG_HIGH_1) && SG_MATCH(p2, SG_HIGH_2)) {
           scan_code |= 1<<((i/2)-1);
-          Serial.print("1 ");
+          DEB_PR("1 ");
           continue;
       }
       if (SG_MATCH(p1, SG_HIGH_1) && SG_MATCH(p2, SG_LOW_2)) {
-          Serial.print("0 ");
+          DEB_PR("0 ");
           continue;
       }   
-      Serial.print("pair ");
-      Serial.print(p1);
-      Serial.print(" ");
-      Serial.println(p2);
+      DEB_PR("pair ");
+      DEB_PR(p1);
+      DEB_PR(" ");
+      DEB_PRL(p2);
       return 0;
   }
-  Serial.println(" OK");
-  if (scan_code == 4294967295)
-      return 0;
-  
+  DEB_PRL(" OK");
+
   return scan_code;
 }
 
 void loop() {
   unsigned long res = 0;
-  if (irrecv.decode(&results)) {
-    Serial.print("Scancode: ");
+  if (irrecv.decode(&results)) {    
     res = decode_sega_gen(&results);        
     switch (res) {
         case SG_A:
@@ -115,7 +124,37 @@ void loop() {
             break;           
         case SG_C:
             Serial.println("C");
-            break;             
+            break;
+        case SG_X:
+            Serial.println("X");
+            break;
+        case SG_Y:
+            Serial.println("Y");
+            break;           
+        case SG_Z:
+            Serial.println("Z");
+            break;               
+        case SG_UP:
+            Serial.println("UP");
+            break;
+        case SG_DN:
+            Serial.println("DOWN");
+            break;           
+        case SG_LF:
+            Serial.println("LEFT");
+            break;               
+        case SG_RH:
+            Serial.println("RIGHT");
+            break;               
+        case SG_MN:
+            Serial.println("MENU");
+            break;               
+        case SG_ST:
+            Serial.println("START");
+            break; 
+        case SG_END:
+            // Thats send after key released
+            break;                              
         default:
             Serial.println(res);     
     }
