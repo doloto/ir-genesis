@@ -22,9 +22,9 @@ void setup()
 
 // Format of message
 #define SG_HEADER_LEN 38
-#define SG_PAIRS_NUM 17
+#define SG_PAIRS_NUM 17 
 
-//A;; in USECs
+//in USECs
 #define SG_HEADER_1 2250
 #define SG_HEADER_2 700
 #define SG_HIGH_1 300
@@ -35,24 +35,24 @@ void setup()
 
 #define SG_MATCH(x, y) (abs(y - x) <= SG_TOLERANCE)
 
-// Scancodes
-#define SG_A 32639
-#define SG_B 4294950847
-#define SG_C 4294959071
+// Scancodes for P1
+#define SG_A 0x7F7F
+#define SG_B 0xFFFFBFBF
+#define SG_C 0xFFFFDFDF
 
-#define SG_X 4294959101
-#define SG_Y 4294950907
-#define SG_Z 32759
+#define SG_X 0xFFFFDFFD
+#define SG_Y 0xFFFFBFFB
+#define SG_Z 0x7FF7
 
-#define SG_UP 30719
-#define SG_DN 4294949887
-#define SG_LF 4294958591
-#define SG_RH 32511
+#define SG_UP 0x77FF
+#define SG_DN 0xFFFFBBFF
+#define SG_LF 0xFFFFDDFF
+#define SG_RH 0x7EFF
 
-#define SG_MN 28671
-#define SG_ST 32751
+#define SG_MN 0x6FFF
+#define SG_ST 0x7FEF
 
-#define SG_END 4294967295
+#define SG_END 0xFFFFFFFF
 
 #ifdef DEBUG_PRINT
 #define DEB_PR(x)  (Serial.print(x))
@@ -62,6 +62,7 @@ void setup()
 #define DEB_PRL(x)
 #endif
 
+// Returns scan code of key or 0, if not recognized
 unsigned long int decode_sega_gen(decode_results *results) {
   long raw_usec[SG_HEADER_LEN];
   unsigned long int scan_code = 0;
@@ -111,53 +112,58 @@ unsigned long int decode_sega_gen(decode_results *results) {
   return scan_code;
 }
 
+void print_scancode(unsigned long scancode) {
+    switch (scancode) {
+        case SG_A:
+            Serial.print("A ");
+            break;
+        case SG_B:
+            Serial.print("B ");
+            break;           
+        case SG_C:
+            Serial.print("C ");
+            break;
+        case SG_X:
+            Serial.print("X ");
+            break;
+        case SG_Y:
+            Serial.print("Y ");
+            break;           
+        case SG_Z:
+            Serial.print("Z ");
+            break;               
+        case SG_UP:
+            Serial.print("UP ");
+            break;
+        case SG_DN:
+            Serial.print("DOWN ");
+            break;           
+        case SG_LF:
+            Serial.print("LEFT ");
+            break;               
+        case SG_RH:
+            Serial.print("RIGHT ");
+            break;               
+        case SG_MN:
+            Serial.print("MENU ");
+            break;               
+        case SG_ST:
+            Serial.print("START ");
+            break; 
+        case SG_END:
+            Serial.println("KEY RELEASE");            
+            break;                              
+        default:
+            Serial.println(scancode);     
+    }    
+    return;
+}
+
 void loop() {
   unsigned long res = 0;
   if (irrecv.decode(&results)) {    
-    res = decode_sega_gen(&results);        
-    switch (res) {
-        case SG_A:
-            Serial.println("A");
-            break;
-        case SG_B:
-            Serial.println("B");
-            break;           
-        case SG_C:
-            Serial.println("C");
-            break;
-        case SG_X:
-            Serial.println("X");
-            break;
-        case SG_Y:
-            Serial.println("Y");
-            break;           
-        case SG_Z:
-            Serial.println("Z");
-            break;               
-        case SG_UP:
-            Serial.println("UP");
-            break;
-        case SG_DN:
-            Serial.println("DOWN");
-            break;           
-        case SG_LF:
-            Serial.println("LEFT");
-            break;               
-        case SG_RH:
-            Serial.println("RIGHT");
-            break;               
-        case SG_MN:
-            Serial.println("MENU");
-            break;               
-        case SG_ST:
-            Serial.println("START");
-            break; 
-        case SG_END:
-            // Thats send after key released
-            break;                              
-        default:
-            Serial.println(res);     
-    }
+    res = decode_sega_gen(&results);
+    print_scancode(res);           
     irrecv.resume(); // Receive the next value
   }
   delay(100);  
